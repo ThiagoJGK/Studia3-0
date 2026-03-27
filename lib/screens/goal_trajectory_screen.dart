@@ -5,6 +5,19 @@ class GoalTrajectoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Escuchar el Goal pasado como parametro por el Navigator
+    final goalArgs = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
+    final title = goalArgs['title'] ?? 'Trayectoria Activa';
+    final progress = (goalArgs['progress'] ?? 0) / 100.0;
+    
+    // Calcula días restantes mock vs real
+    String timeLeftLabel = 'Meta en progreso';
+    if (goalArgs['target_date'] != null) {
+      final target = DateTime.parse(goalArgs['target_date']);
+      final diff = target.difference(DateTime.now()).inDays;
+      timeLeftLabel = diff > 0 ? 'Faltan $diff días' : 'Fecha alcanzada';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7FB), // Light surface
       appBar: AppBar(
@@ -21,19 +34,21 @@ class GoalTrajectoryScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Aprobar Álgebra',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF333333)),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Faltan 21 días para el Parcial',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF536D00), fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF333333)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        timeLeftLabel,
+                        style: const TextStyle(fontSize: 16, color: Color(0xFF536D00), fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(
                   width: 60,
@@ -42,13 +57,13 @@ class GoalTrajectoryScreen extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       CircularProgressIndicator(
-                        value: 0.8,
+                        value: progress,
                         strokeWidth: 8,
                         backgroundColor: const Color(0xFF8DB600).withOpacity(0.15),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8DB600)),
                       ),
-                      const Center(
-                        child: Text('80%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Center(
+                        child: Text('${(progress * 100).toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       )
                     ],
                   ),
@@ -58,38 +73,20 @@ class GoalTrajectoryScreen extends StatelessWidget {
             
             const SizedBox(height: 48),
             
-            // Timeline
-            _buildTimelineItem(
-              context,
-              date: 'HOY',
-              title: 'Teoría: Matrices',
-              duration: '45 min',
-              isToday: true,
-              isCompleted: false,
-            ),
-            _buildTimelineItem(
-              context,
-              date: 'Mañana',
-              title: 'Práctica: Operaciones',
-              duration: '60 min',
-              isToday: false,
-              isCompleted: false,
-            ),
-            _buildTimelineItem(
-              context,
-              date: 'Jueves',
-              title: 'Quiz de Retención',
-              duration: '20 min',
-              isToday: false,
-              isCompleted: false,
-            ),
-            _buildTimelineItem(
-              context,
-              date: 'Ayer',
-              title: 'Introducción a Matrices',
-              duration: '30 min',
-              isToday: false,
-              isCompleted: true,
+            // Timeline Dinámico - Placeholder para fetching `study_sessions` de BD
+            // Por ahora, mostrará esto para visualizar la vista, pero no está hardcodeado 
+            // al nombre de la materia sino vinculado a la respuesta futura del agente.
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Text(
+                'Las sesiones de estudio dinámicas generadas por Gemini aparecerán en esta línea de tiempo. Por favor presiona "Generar Trayectoria" en un nuevo objetivo para poblar tu base de datos.',
+                style: TextStyle(color: Colors.black54, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
             ),
             
             const SizedBox(height: 80), // Padding for FAB
@@ -104,10 +101,12 @@ class GoalTrajectoryScreen extends StatelessWidget {
           height: 64,
           child: FloatingActionButton.extended(
             onPressed: () {
-              // Start study session
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Iniciando sesión de estudio...'), backgroundColor: Color(0xFF536D00)),
-              );
+              // Navegar al Socratic Player enviando los argumentos de la sesión de HOY
+              Navigator.pushNamed(context, '/session', arguments: {
+                'title': 'Análisis del Syllabus',
+                'progress': progress,
+                'content': 'El agente socrático ha detectado tu syllabus.',
+              });
             },
             backgroundColor: const Color(0xFF8DB600),
             elevation: 8,
@@ -116,107 +115,6 @@ class GoalTrajectoryScreen extends StatelessWidget {
             icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTimelineItem(BuildContext context, {required String date, required String title, required String duration, required bool isToday, required bool isCompleted}) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Timeline line and dot
-          Column(
-            children: [
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: isCompleted ? const Color(0xFF8DB600) : (isToday ? const Color(0xFF536D00) : Colors.white),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isCompleted || isToday ? Colors.transparent : Colors.grey.shade400,
-                    width: 3,
-                  ),
-                ),
-                child: isCompleted ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
-              ),
-              Expanded(
-                child: Container(
-                  width: 3,
-                  color: isCompleted ? const Color(0xFF8DB600) : Colors.grey.shade300,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 24),
-          
-          // Card content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    date,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                      color: isToday ? const Color(0xFF8DB600) : Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isToday ? const Color(0xFF8DB600).withOpacity(0.1) : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isToday ? const Color(0xFF8DB600).withOpacity(0.5) : Colors.transparent,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isCompleted ? Colors.grey : const Color(0xFF333333),
-                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.timer_outlined, size: 16, color: isCompleted ? Colors.grey : const Color(0xFF536D00)),
-                            const SizedBox(width: 4),
-                            Text(
-                              duration,
-                              style: TextStyle(color: isCompleted ? Colors.grey : const Color(0xFF536D00), fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-          )
-        ],
       ),
     );
   }

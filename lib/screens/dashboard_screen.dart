@@ -136,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                      title: goal['title'] ?? 'Sin Título',
                      subtitle: 'Meta Activa',
                      progress: (goal['progress'] ?? 0) / 100.0,
-                     onTap: () => Navigator.pushNamed(context, '/trajectory'),
+                     onTap: () => Navigator.pushNamed(context, '/trajectory', arguments: goal),
                    ),
                  )).toList(),
             ],

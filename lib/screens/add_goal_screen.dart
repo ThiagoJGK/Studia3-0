@@ -85,7 +85,19 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
         );
       }
 
-      // TODO: Firebase/Subapase Edge Function trigger to Gemini API would happen here or in background
+      // 3. Trigger Socratic Agent (Edge Function)
+      try {
+         await Supabase.instance.client.functions.invoke(
+            'socratic-agent',
+            body: {
+               'goal_id': goalId,
+               'file_path': storagePath
+            }
+         );
+      } catch (funcError) {
+         // Log the error but don't block the UI, the trajectory is queued.
+         print('Error invoke function: $funcError');
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

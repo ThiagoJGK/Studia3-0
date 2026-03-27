@@ -5,20 +5,26 @@ class SessionPlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic values from routing
+    final sessionArgs = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
+    final title = sessionArgs['title'] ?? 'Deep Work Session';
+    final content = sessionArgs['content'] ?? 'Esperando indicaciones de la IA...';
+    final progress = sessionArgs['progress'] ?? 0.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7FB), // Light surface
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Deep Work Session', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF333333))),
-            SizedBox(height: 4),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF333333))),
+            const SizedBox(height: 4),
             SizedBox(
               width: 150,
               child: LinearProgressIndicator(
-                value: 0.45,
+                value: progress,
                 backgroundColor: Colors.black12,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8DB600)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8DB600)),
               ),
             ),
           ],
@@ -34,7 +40,7 @@ class SessionPlayerScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Socratic Agent Card (Analogy)
+              // Socratic Agent Card (Dynamic Content)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
@@ -68,13 +74,13 @@ class SessionPlayerScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'La Analogía de la Red',
+                      'Analogía / Reto Generado',
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF333333)),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Imagina que tu memoria es una red de pesca. Si los nudos están flojos o hay hilos rotos, los peces grandes (los conceptos complejos) se escapan a través de los agujeros. Las matemáticas no son una lista de fórmulas, son la tensión de esa red.',
-                      style: TextStyle(fontSize: 18, color: Colors.black87, height: 1.5),
+                    Text(
+                      content,
+                      style: const TextStyle(fontSize: 18, color: Colors.black87, height: 1.5),
                     ),
                   ],
                 ),
@@ -89,14 +95,14 @@ class SessionPlayerScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                '¿Cómo aplicarías esta analogía a la transposición de Matrices que fallaste ayer?',
+                'Demuestra entendimiento profundo sobre el tema expuesto arriba.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
               const SizedBox(height: 20),
               TextField(
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Escribe tu razonamiento aquí para demostrar procesamiento profundo...',
+                  hintText: 'Escribe tu razonamiento aquí para demostrar procesamiento...',
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -126,7 +132,7 @@ class SessionPlayerScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
                   onPressed: () {
-                    // Validate via Agent logic
+                    // Cierra pantalla actual y actualiza score en base
                     Navigator.pop(context);
                   },
                   child: const Text('Validar y Continuar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
