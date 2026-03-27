@@ -1,0 +1,29 @@
+# SYLLABUS: Álgebra Lineal y Estructuras Matemáticas (Prueba Studia 3.0)
+
+## Objetivo de la Materia
+Comprender las estructuras subyacentes del espacio euclidiano y las transformaciones lineales aplicadas a la ingeniería de sistemas.
+
+## Temario Crítico (Lo que será evaluado)
+
+### Unidad 1: Matrices y Sistemas de Ecuaciones
+- Operaciones con matrices: Suma, producto y transposición.
+- Determinantes y sus propiedades geométrica (Cálculo de Áreas/Volúmenes).
+- Rango de una matriz y el Teorema de Rouché-Frobenius.
+
+### Unidad 2: Espacios Vectoriales
+- Definición de Espacio y Subespacio Vectorial.
+- Combinación lineal, Independencia lineal y Bases.
+- Dimensión de un espacio vectorial.
+
+### Unidad 3: Transformaciones Lineales
+- Núcleo e Imagen de una transformación.
+- Matriz asociada a una transformación lineal.
+- Autovalores y Autovectores (Eigenvalues/Eigenvectors).
+
+## Bibliografía Recomendada
+- Anton, H. "Introducción al Álgebra Lineal".
+- Strang, G. "Linear Algebra and its Applications".
+
+## Fechas de Examen
+- Parcial 1: [FECHA_TEST_1]
+- Final: [FECHA_TEST_FINAL]

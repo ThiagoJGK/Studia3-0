@@ -40,23 +40,32 @@ serve(async (req) => {
     const geminiApiKey = 'AIzaSyArqJNTKGHJht_4T_3sqLpbry9s_9pMKLY'
 
     const prompt = `
-      Actúa como un tutor "Agente Socrático". El alumno debe preparar la meta "${goalData.title}" para el ${goalData.target_date}.
-      Aplica las siguientes reglas de Fricción Cognitiva:
-      1. Genera exactamente 3 sesiones de estudio para esta semana.
-      2. No des resúmenes directos. Exige comprobación mediante "flashcards" o "quizzes".
-      3. Proporciona analogías didácticas complejas para la "theory".
+      Actúa como un tutor académico de alto nivel "Agente Socrático" en Studia 3.0. 
+      Analiza este documento de planificación universitaria oficial (UTN).
       
-      Temario Extraído: ${syllabusText}
+      OBJETIVO:
+      1. Extraer las "Unidades de Contenido" (Programa Analítico) y los "Resultados de Aprendizaje".
+      2. Mapear el "Cronograma de Clases" para entender la progresión temporal.
+      3. Generar una trayectoria de estudio para la meta "${goalData.title}" (Examen: ${goalData.target_date}).
+
+      REGLAS DE FRICCIÓN COGNITIVA (Studia 3.0):
+      - Divide el contenido en 3 sesiones iniciales enfocadas en las Unidades más críticas.
+      - Session 1 (Theory): Usa analogías didácticas complejas para explicar el "por qué" detrás del concepto (ej. Theory of Systems). 
+      - Session 2 (Evaluative): Flashcards con preguntas abiertas que exijan auto-explicación.
+      - Session 3 (Stress Test): Simil examen con problemas de aplicación real.
       
-      Devuelve ÚNICAMENTE un JSON VÁLIDO con el formato:
+      TEXTO EXTRAÍDO DEL DOCUMENTO: 
+      "${syllabusText.substring(0, 10000)}" 
+      
+      RETORNO: Únicamente un JSON válido con este formato:
       [
         {
-          "title": "...",
-          "scheduled_date": "2026-03-30T10:00:00Z",
+          "title": "Unidad X: [Nombre]",
+          "scheduled_date": "ISOString",
           "mechanic": "theory" | "quiz" | "flashcard",
           "content_payload": {
              "analogy": "...",
-             "questions": []
+             "questions": [{"q": "...", "a": "..."}]
           }
         }
       ]
