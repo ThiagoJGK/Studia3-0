@@ -44,12 +44,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Supabase.instance.client
           .from('goals')
           .stream(primaryKey: ['id'])
-          .eq('user_id', user.id)
-          .eq('status', 'active')
           .listen((List<Map<String, dynamic>> data) {
         if (mounted) {
           setState(() {
-            _goals = data;
+            _goals = data.where((g) => g['user_id'] == user.id && g['status'] == 'active').toList();
             _isLoading = false;
           });
         }
