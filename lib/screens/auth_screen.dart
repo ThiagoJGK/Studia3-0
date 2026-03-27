@@ -1,7 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AuthScreen extends StatelessWidget {
+class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
+
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _authenticate() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa tu correo y contraseña.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    
+    try {
+      // Intentar Login
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      if (mounted) Navigator.pushReplacementNamed(context, '/dashboard');
+    } on AuthException catch (e) {
+      // Si el usuario no existe o credenciales inválidas, intentamos Registro
+      if (e.message.contains('Invalid login credentials') || e.message.contains('not found')) {
+        try {
+          final res = await Supabase.instance.client.auth.signUp(
+            email: email,
+            password: password,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('¡Cuenta creada con éxito! Bienvenido al Santuario.')),
+            );
+            // Si el registro es exitoso, lo enviamos al onboarding
+            Navigator.pushReplacementNamed(context, '/onboarding');
+          }
+        } on AuthException catch (signUpError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error al registrar: ${signUpError.message}')),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error de autenticación: ${e.message}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error inesperado: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +122,9 @@ class AuthScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Envelopes
-              _buildTextField('Correo Electrónico', Icons.email_outlined),
+              _buildTextField('Correo Electrónico', Icons.email_outlined, controller: _emailController),
               const SizedBox(height: 16),
-              _buildTextField('Contraseña', Icons.lock_outline, obscureText: true),
+              _buildTextField('Contraseña', Icons.lock_outline, obscureText: true, controller: _passwordController),
 
               const SizedBox(height: 32),
 
@@ -61,11 +138,10 @@ class AuthScreen extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  onPressed: () {
-                    // Auth logic directly to Onboarding
-                    Navigator.pushReplacementNamed(context, '/onboarding');
-                  },
-                  child: const Text('Acceder a mi Santuario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  onPressed: _isLoading ? null : _authenticate,
+                  child: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                    : const Text('Acceder a mi Santuario', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
 
@@ -107,8 +183,9 @@ class AuthScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String hint, IconData icon, {bool obscureText = false}) {
+  Widget _buildTextField(String hint, IconData icon, {bool obscureText = false, TextEditingController? controller}) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
         hintText: hint,

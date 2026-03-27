@@ -1,10 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MasteryTowerScreen extends StatelessWidget {
+class MasteryTowerScreen extends StatefulWidget {
   const MasteryTowerScreen({super.key});
 
   @override
+  State<MasteryTowerScreen> createState() => _MasteryTowerScreenState();
+}
+
+class _MasteryTowerScreenState extends State<MasteryTowerScreen> {
+  int _points = 0;
+  int _streak = 0;
+  List<dynamic> _goals = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      Supabase.instance.client
+          .from('users')
+          .stream(primaryKey: ['id'])
+          .listen((List<Map<String, dynamic>> data) {
+        if (data.isNotEmpty && mounted) {
+           final profile = data.firstWhere((element) => element['id'] == user.id, orElse: () => {});
+           if (profile.isNotEmpty) {
+              setState(() {
+                _points = profile['points'] ?? 0;
+                _streak = profile['current_streak'] ?? 0;
+              });
+           }
+        }
+      });
+
+      Supabase.instance.client
+          .from('goals')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', user.id)
+          .listen((List<Map<String, dynamic>> data) {
+        if (mounted) {
+          setState(() {
+            _goals = data;
+            _isLoading = false;
+          });
+        }
+      });
+    } else {
+        setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Determine if any goal is struggling (below 80% progress)
+    final strugglingGoal = _goals.firstWhere(
+      (g) => g['status'] == 'active' && ((g['progress'] ?? 0) < 80), 
+      orElse: () => null
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7FB), // Light surface
       appBar: AppBar(
@@ -13,9 +71,9 @@ class MasteryTowerScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF536D00)),
         actions: [
-          _buildHudBadge(Icons.local_fire_department, '5', Colors.orange),
+          _buildHudBadge(Icons.local_fire_department, '$_streak', Colors.orange),
           const SizedBox(width: 8),
-          _buildHudBadge(Icons.star_rounded, '140', const Color(0xFF8DB600)),
+          _buildHudBadge(Icons.star_rounded, '$_points', const Color(0xFF8DB600)),
           const SizedBox(width: 16),
         ],
       ),
@@ -30,79 +88,96 @@ class MasteryTowerScreen extends StatelessWidget {
             ),
             const SizedBox(height: 48),
 
-            // The Stacked Tower
-            Center(
-              child: Column(
-                children: [
-                  _buildBlock(title: 'Integrales', mastery: '0%', isSolid: false, opacity: 0.3),
-                  const SizedBox(height: 4),
-                  _buildBlock(title: 'Derivadas', mastery: '90%', isSolid: true, opacity: 1.0),
-                  const SizedBox(height: 4),
-                  // The cracked foundational block
-                  _buildCrackedBlock(title: 'Álgebra Base', mastery: '60% Dominio'),
-                ],
-              ),
-            ),
+            if (_isLoading)
+               const Center(child: CircularProgressIndicator(color: Color(0xFF8DB600)))
+            else
+               Center(
+                 child: Column(
+                   children: [
+                     if (_goals.isEmpty)
+                        const Text('Tu torre aún no tiene cimientos. Crea un objetivo.', style: TextStyle(color: Colors.black54))
+                     else
+                        ..._goals.map((goal) {
+                          final progress = goal['progress'] ?? 0;
+                          final isCracked = progress < 80;
+                          
+                          if (isCracked) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: _buildCrackedBlock(title: goal['title'] ?? 'Materia', mastery: '$progress% Dominio'),
+                            );
+                          } else {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: _buildBlock(title: goal['title'] ?? 'Materia', mastery: '$progress%', isSolid: true, opacity: 1.0),
+                            );
+                          }
+                        }).toList(),
+                   ],
+                 ),
+               ),
 
             const SizedBox(height: 48),
 
-            // Warning Section
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.red.shade200),
+            if (strugglingGoal != null)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Riesgo de Colapso Analítico',
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tus cimientos en ${strugglingGoal['title']} presentan grietas (${strugglingGoal['progress']}%). El conocimiento inerte impedirá avanzar a herramientas superiores. Se detectó riesgo por el Efecto Mateo.',
+                            style: const TextStyle(color: Colors.black87, fontSize: 14),
+                          )
+                        ],
+                      ),
+                    )
+                  ],
+                ),
               ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Riesgo de Colapso Analítico',
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Tus cimientos en Álgebra presentan grietas. El conocimiento inerte impedirá avanzar a herramientas superiores. Se detectó riesgo por el Efecto Mateo.',
-                          style: TextStyle(color: Colors.black87, fontSize: 14),
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
             
             const SizedBox(height: 80),
           ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: SizedBox(
-          width: double.infinity,
-          height: 64,
-          child: FloatingActionButton.extended(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Generando sesión de Nivelación (Práctica Espaciada)...')),
-              );
-            },
-            backgroundColor: const Color(0xFF8DB600),
-            elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-            label: const Text('Sellar las Grietas', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-            icon: const Icon(Icons.build_rounded, color: Colors.white, size: 28),
+      floatingActionButton: strugglingGoal != null 
+       ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SizedBox(
+            width: double.infinity,
+            height: 64,
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Generando sesión de Nivelación (Práctica Espaciada)...')),
+                );
+              },
+              backgroundColor: const Color(0xFF8DB600),
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+              label: const Text('Sellar las Grietas', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+              icon: const Icon(Icons.build_rounded, color: Colors.white, size: 28),
+            ),
           ),
-        ),
-      ),
+        )
+       : const SizedBox.shrink(),
     );
   }
 
@@ -163,7 +238,7 @@ class MasteryTowerScreen extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Simulated cracks with CustomPaint or Icons
+          // Simulated cracks
           Positioned(
             left: 20,
             top: 10,

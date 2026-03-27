@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,10 +12,19 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate Supabase auth check / loading
-    Future.delayed(const Duration(seconds: 2), () {
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(seconds: 1)); // Minimum splash time for aesthetic
+    if (!mounted) return;
+    
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
       Navigator.pushReplacementNamed(context, '/auth');
-    });
+    }
   }
 
   @override
