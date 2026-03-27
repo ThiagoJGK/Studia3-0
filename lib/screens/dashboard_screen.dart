@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as dart_ui;
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -7,10 +8,19 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7FB), // Light surface
+      extendBody: true, // Required for floating HUD effect
+      extendBodyBehindAppBar: true, // Required for blurred header effect
       appBar: AppBar(
         title: const Text('Studia 3.0', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF536D00))),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white.withOpacity(0.6),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF536D00)),
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: _HUD_BLUR,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Color(0xFF536D00)),
@@ -118,18 +128,57 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF8DB600),
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), label: 'Goals'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 24.0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: _HUD_BLUR, // Performant blur limited to the container bounds
+              child: Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavIcon(Icons.home_filled, true, () {}),
+                    _buildNavIcon(Icons.calendar_month_rounded, false, () => Navigator.pushNamed(context, '/calendar')),
+                    _buildNavIcon(Icons.add_circle, false, () => Navigator.pushNamed(context, '/add_goal')),
+                    _buildNavIcon(Icons.emoji_events_outlined, false, () => Navigator.pushNamed(context, '/mastery')),
+                    _buildNavIcon(Icons.person_outline, false, () => Navigator.pushNamed(context, '/profile')),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Define blur globally to avoid rebuild costs
+  static final _HUD_BLUR = _getBlurFilter();
+  static _getBlurFilter() => dart_ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15);
+
+  Widget _buildNavIcon(IconData icon, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF8DB600).withOpacity(0.15) : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? const Color(0xFF8DB600) : Colors.grey.shade500,
+          size: 28,
+        ),
       ),
     );
   }
