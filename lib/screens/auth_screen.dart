@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:ui' as ui;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -351,7 +350,6 @@ class _AuthScreenState extends State<AuthScreen> {
     return Container(
       width: size, height: size,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: const BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60)),
     );
   }
 }
