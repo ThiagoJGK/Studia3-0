@@ -66,8 +66,17 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
       final goalId = goalResponse['id'];
 
       // 2. Upload Syllabus to Storage
-      final fileName = _selectedFile!.name;
-      final storagePath = '${user.id}/$goalId/$fileName';
+      // Sanitize filename: remove accented/special chars and replace spaces with underscores
+      final rawName = _selectedFile!.name;
+      final sanitized = rawName
+          .replaceAll(RegExp(r'[áàäâã]', caseSensitive: false), 'a')
+          .replaceAll(RegExp(r'[éèëê]', caseSensitive: false), 'e')
+          .replaceAll(RegExp(r'[íìïî]', caseSensitive: false), 'i')
+          .replaceAll(RegExp(r'[óòöôõ]', caseSensitive: false), 'o')
+          .replaceAll(RegExp(r'[úùüû]', caseSensitive: false), 'u')
+          .replaceAll(RegExp(r'[ñ]', caseSensitive: false), 'n')
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]'), '_');
+      final storagePath = '${user.id}/$goalId/$sanitized';
 
       if (kIsWeb) {
         // En entorno Web, usamos los bytes directamente
