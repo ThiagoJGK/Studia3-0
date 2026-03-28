@@ -103,9 +103,9 @@ class GoalTrajectoryScreen extends StatelessWidget {
             onPressed: () {
               // Navegar al Socratic Player enviando los argumentos de la sesión de HOY
               Navigator.pushNamed(context, '/session', arguments: {
-                'title': 'Análisis del Syllabus',
+                'title': 'Análisis del Programa',
                 'progress': progress,
-                'content': 'El agente socrático ha detectado tu syllabus.',
+                'content': 'El agente socrático ha analizado tu material de estudio.',
               });
             },
             backgroundColor: const Color(0xFF8DB600),
