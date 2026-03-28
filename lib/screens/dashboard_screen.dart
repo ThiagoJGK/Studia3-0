@@ -25,17 +25,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _initData() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+    // 1. Subscribe to profile
       Supabase.instance.client
           .from('users')
           .stream(primaryKey: ['id'])
           .listen((List<Map<String, dynamic>> data) {
         if (data.isNotEmpty && mounted) {
-          final profile = data.firstWhere((element) => element['id'] == user.id, orElse: () => {});
+          final profile = data.firstWhere((e) => e['id'] == user.id, orElse: () => {});
           if (profile.isNotEmpty) {
              setState(() {
                 _points = profile['points'] ?? 0;
                 _streak = profile['current_streak'] ?? 0;
-                _firstName = (profile['display_name'] ?? 'Usuario').split(' ')[0];
+                // Prefer display_name; fall back to email prefix as last resort
+                final raw = profile['display_name'] as String?;
+                _firstName = (raw != null && raw.isNotEmpty)
+                    ? raw.split(' ')[0]
+                    : (user.email?.split('@')[0] ?? 'Usuario');
              });
           }
         }
@@ -65,15 +70,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Studia 3.0', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF536D00))),
-        backgroundColor: Colors.white.withOpacity(0.6),
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        shadowColor: Colors.black12,
         iconTheme: const IconThemeData(color: Color(0xFF536D00)),
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: _HUD_BLUR,
-            child: Container(color: Colors.transparent),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Color(0xFF536D00)),
@@ -196,15 +196,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF8DB600).withOpacity(0.15) : Colors.transparent,
-          shape: BoxShape.circle,
+          color: isSelected ? const Color(0xFF536D00) : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
         ),
         child: Icon(
           icon,
-          color: isSelected ? const Color(0xFF8DB600) : Colors.grey.shade500,
-          size: 28,
+          color: isSelected ? Colors.white : Colors.grey.shade500,
+          size: 26,
         ),
       ),
     );

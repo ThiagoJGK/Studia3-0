@@ -76,8 +76,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSettingsCard(
               title: 'Configuraciones Generales',
               children: [
-                _buildSettingRow(Icons.psychology_outlined, 'Tono del Agente', _tone),
-                _buildSettingRow(Icons.access_time, 'Organizador Base', 'Ver Calendario'),
+                _buildSettingRow(Icons.psychology_outlined, 'Tono del Agente', _tone,
+                    onTap: () => Navigator.pushNamed(context, '/onboarding')),
+                _buildSettingRow(Icons.access_time, 'Organizador Base', 'Ver Calendario',
+                    onTap: () => Navigator.pushNamed(context, '/calendar')),
                 _buildSettingRow(Icons.notifications_outlined, 'Notificaciones de Racha', 'Activadas'),
                 _buildSettingRow(Icons.color_lens_outlined, 'Tema Académico', 'Modo Claro'),
               ],
@@ -134,25 +136,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF536D00), size: 28),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
-                const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 14, color: Colors.black54)),
-              ],
+  Widget _buildSettingRow(IconData icon, String label, String value, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF536D00), size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
+                  const SizedBox(height: 4),
+                  Text(value, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
+            Icon(Icons.chevron_right,
+                color: onTap != null ? const Color(0xFF536D00) : Colors.grey.shade300),
+          ],
+        ),
       ),
     );
   }
