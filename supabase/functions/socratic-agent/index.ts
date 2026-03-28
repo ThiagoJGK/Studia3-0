@@ -14,14 +14,23 @@ serve(async (req) => {
   try {
     const { goal_id, file_path } = await req.json()
 
-    // 1. Initialize Supabase Client internally to bypass RLS securely
-    const supabaseClient = createClient(
+    // 1. Require Authorization header (passed from Flutter Supabase client)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
+    }
+
+    // 2. Initialize admin client (service role bypasses RLS)
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 2. Fetch Goal context
-    const { data: goalData, error: goalError } = await supabaseClient
+    // 3. Fetch Goal context using admin client
+    const { data: goalData, error: goalError } = await supabaseAdmin
       .from('goals')
       .select('*')
       .eq('id', goal_id)
@@ -29,14 +38,23 @@ serve(async (req) => {
     
     if (goalError) throw new Error(`Error fetching goal: ${goalError.message}`)
 
-    // 3. (Mock) Download PDF & Extract Text 
-    // In production, download from Storage and parse with pdf.js or pass to Gemini File API
-    // const { data: fileData, error: fileError } = await supabaseClient.storage.from('syllabus').download(file_path)
+    // 4. Download PDF from Storage and extract text
+    let syllabusText = "Contenido del programa de la materia."
+    if (file_path) {
+      try {
+        const { data: fileData, error: fileError } = await supabaseAdmin.storage
+          .from('syllabus')
+          .download(file_path)
+        if (!fileError && fileData) {
+          // For MVP: convert PDF blob to text (Gemini can handle raw text)
+          syllabusText = await fileData.text()
+        }
+      } catch (_) {
+        // If PDF parsing fails, continue with goal title context
+      }
+    }
 
-    const syllabusText = "Contenido extraido del Syllabus (Mock): Fundamentos de matrices, espacios vectoriales y autovalores."
-
-    // 4. Call Gemini API to generate the Pedagogical Study Sessions
-    // Utilizando la API Key provista directamente para despliegue fácil desde la Web UI
+    // 5. Call Gemini API
     const geminiApiKey = 'AIzaSyArqJNTKGHJht_4T_3sqLpbry9s_9pMKLY'
 
     const prompt = `
@@ -50,19 +68,19 @@ serve(async (req) => {
 
       REGLAS DE FRICCIÓN COGNITIVA (Studia 3.0):
       - Divide el contenido en 3 sesiones iniciales enfocadas en las Unidades más críticas.
-      - Session 1 (Theory): Usa analogías didácticas complejas para explicar el "por qué" detrás del concepto (ej. Theory of Systems). 
+      - Session 1 (Theory): Usa analogías didácticas complejas para explicar el "por qué" detrás del concepto. 
       - Session 2 (Evaluative): Flashcards con preguntas abiertas que exijan auto-explicación.
       - Session 3 (Stress Test): Simil examen con problemas de aplicación real.
       
       TEXTO EXTRAÍDO DEL DOCUMENTO: 
       "${syllabusText.substring(0, 10000)}" 
       
-      RETORNO: Únicamente un JSON válido con este formato:
+      RETORNO: Únicamente un JSON válido con este formato exacto:
       [
         {
           "title": "Unidad X: [Nombre]",
-          "scheduled_date": "ISOString",
-          "mechanic": "theory" | "quiz" | "flashcard",
+          "scheduled_date": "2026-04-01T10:00:00Z",
+          "mechanic": "theory",
           "content_payload": {
              "analogy": "...",
              "questions": [{"q": "...", "a": "..."}]
@@ -86,7 +104,7 @@ serve(async (req) => {
     const generatedContent = geminiData.candidates[0].content.parts[0].text
     const sessions = JSON.parse(generatedContent)
 
-    // 5. Insert Sessions into Database
+    // 6. Insert Sessions into Database
     const recordsToInsert = sessions.map((s: any) => ({
       ...s,
       user_id: goalData.user_id,
@@ -94,7 +112,7 @@ serve(async (req) => {
       status: 'pending'
     }))
 
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabaseAdmin
       .from('study_sessions')
       .insert(recordsToInsert)
 
@@ -105,7 +123,8 @@ serve(async (req) => {
       status: 200,
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const msg = error instanceof Error ? error.message : String(error)
+    return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

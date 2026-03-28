@@ -94,17 +94,20 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
         );
       }
 
-      // 3. Trigger Socratic Agent (Edge Function)
+      // 3. Trigger Socratic Agent (Edge Function) with explicit JWT
       try {
-         await Supabase.instance.client.functions.invoke(
-            'socratic-agent',
-            body: {
-               'goal_id': goalId,
-               'file_path': storagePath
-            }
-         );
+        final session = Supabase.instance.client.auth.currentSession;
+        final jwt = session?.accessToken;
+        await Supabase.instance.client.functions.invoke(
+           'socratic-agent',
+           body: {
+              'goal_id': goalId,
+              'file_path': storagePath
+           },
+           headers: jwt != null ? {'Authorization': 'Bearer $jwt'} : {},
+        );
       } catch (funcError) {
-         // Log the error but don't block the UI, the trajectory is queued.
+         // Log the error but don't block the UI
          print('Error invoke function: $funcError');
       }
       
