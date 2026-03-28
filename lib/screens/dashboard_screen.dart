@@ -151,9 +151,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Container(
                 height: 70,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: const Color(0xFF536D00), // Dark green background
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF536D00).withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -198,12 +204,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF536D00) : Colors.transparent,
+          color: isSelected ? const Color(0xFF8DB600) : Colors.transparent, // Light green for active icon
           borderRadius: BorderRadius.circular(999),
         ),
         child: Icon(
           icon,
-          color: isSelected ? Colors.white : Colors.grey.shade500,
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.6), // White icons, inactive are slightly transparent
           size: 26,
         ),
       ),
