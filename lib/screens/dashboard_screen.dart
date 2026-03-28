@@ -15,6 +15,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _firstName = 'Usuario';
   List<dynamic> _goals = [];
   bool _isLoading = true;
+  String _selectedCategory = 'Estudio';
 
   @override
   void initState() {
@@ -100,43 +101,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'Buenos días, $_firstName',
                 style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF333333)),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Tu radar de aprendizaje está activo. Tienes hitos críticos esta semana.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+              const SizedBox(height: 24),
+
+              // Category Selector
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    _buildCategoryPill('Estudio'),
+                    _buildCategoryPill('Salud'),
+                    _buildCategoryPill('Trabajo'),
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
 
-              Row(
-                children: [
-                  Expanded(child: _buildStatCard('Racha', '$_streak días', Icons.local_fire_department, Colors.orange)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatCard('Puntos', 'Pts $_points', Icons.star_rounded, const Color(0xFF8DB600))),
-                ],
-              ),
+              // Dynamic Content based on Selection
+              if (_selectedCategory == 'Estudio') ...[
+                Row(
+                  children: [
+                    Expanded(child: _buildStatCard('Racha', '$_streak días', Icons.local_fire_department, Colors.orange)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildStatCard('Puntos', 'Pts $_points', Icons.star_rounded, const Color(0xFF8DB600))),
+                  ],
+                ),
 
-              const SizedBox(height: 48),
-              const Text(
-                'Trayectorias Activas',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF536D00)),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 48),
+                const Text(
+                  'Trayectorias Activas',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF536D00)),
+                ),
+                const SizedBox(height: 16),
 
-              if (_isLoading)
-                 const Center(child: CircularProgressIndicator(color: Color(0xFF8DB600)))
-              else if (_goals.isEmpty)
-                 const Center(child: Text('No hay trayectorias activas aún. Crea un nuevo objetivo.', style: TextStyle(color: Colors.black54)))
-              else
-                 ..._goals.map((goal) => Padding(
-                   padding: const EdgeInsets.only(bottom: 16.0),
-                   child: _buildGoalCard(
-                     context,
-                     title: goal['title'] ?? 'Sin Título',
-                     subtitle: 'Meta Activa',
-                     progress: (goal['progress'] ?? 0) / 100.0,
-                     onTap: () => Navigator.pushNamed(context, '/trajectory', arguments: goal),
-                   ),
-                 )).toList(),
+                if (_isLoading)
+                   const Center(child: CircularProgressIndicator(color: Color(0xFF8DB600)))
+                else if (_goals.isEmpty)
+                   const Center(child: Text('No hay trayectorias activas aún. Crea un nuevo objetivo.', style: TextStyle(color: Colors.black54)))
+                else
+                   ..._goals.map((goal) => Padding(
+                     padding: const EdgeInsets.only(bottom: 16.0),
+                     child: _buildGoalCard(
+                       context,
+                       title: goal['title'] ?? 'Sin Título',
+                       subtitle: 'Meta Activa',
+                       progress: (goal['progress'] ?? 0) / 100.0,
+                       onTap: () => Navigator.pushNamed(context, '/trajectory', arguments: goal),
+                     ),
+                   )).toList(),
+              ] else if (_selectedCategory == 'Salud') ...[
+                _buildPlaceholderCard('Salud', Icons.favorite_rounded, 'Las métricas de sueño, energía y rutinas inteligentes estarán disponibles pronto.'),
+              ] else if (_selectedCategory == 'Trabajo') ...[
+                _buildPlaceholderCard('Trabajo', Icons.work_rounded, 'La integración asimétrica de pendientes y proyectos profesionales está en desarrollo.'),
+              ],
             ],
           ),
         ),
@@ -213,6 +236,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
           size: 26,
         ),
       ),
+    );
+  }
+
+  Widget _buildCategoryPill(String category) {
+    final isSelected = _selectedCategory == category;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedCategory = category),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF8DB600) : Colors.transparent,
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: const Color(0xFF8DB600).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              )
+            ] : [],
+          ),
+          child: Text(
+            category,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              color: isSelected ? Colors.white : Colors.grey.shade500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderCard(String title, IconData icon, String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))
+        ]
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8DB600).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 48, color: const Color(0xFF8DB600)),
+          ),
+          const SizedBox(height: 24),
+          Text('Sección de $title', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+          const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: Colors.black54, height: 1.5)),
+        ],
+      )
     );
   }
 
